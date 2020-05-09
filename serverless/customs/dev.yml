@@ -1,0 +1,16 @@
+# provider
+deployRegion: us-west-2
+profile: pipenv-layer-dev
+retentionInDays: 3
+
+# load package
+pythonRequirements:
+  fileName: ../requirements.txt
+
+# serverless-prune-plugin
+prune:
+  automatic: true
+  number: 3
+
+layers:
+  - ${cf:desktoday-user-requirements-packages-dev.PythonRequirementsLambdaLayerQualifiedArn}

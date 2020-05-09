@@ -1,0 +1,80 @@
+# DeskToday ユーザーアプリ -tenants
+custom: ${file(../customs/${opt:stage, 'dev'}.yml)}
+
+service: desktoday-user-tenants
+
+provider:
+  name: aws
+  runtime: python3.8
+  stage: ${opt:stage, 'dev'}
+  region: ${self:custom.deployRegion}
+  profile: ${self:custom.profile}
+  logRetentionInDays: ${self:custom.retentionInDays}
+  timeout: 30
+  memorySize: 256
+  logs:
+    restApi: true
+  tracing:
+    apiGateway: true
+    lambda: true
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "lambda:InvokeFunction"
+        - "xray:PutTraceSegments"
+        - "xray:PutTelemetryRecords"
+        - "dynamodb:GetItem"
+        - "dynamodb:Scan"
+        - "dynamodb:BatchGetItem"
+      Resource: "*"
+package:
+  include:
+    - ../common/**
+  exclude:
+    - node_modules/**
+    - venv/**
+    - customs/**
+    - tests/**
+    - package*
+
+plugins:
+  - serverless-prune-plugin
+  - serverless-python-requirements
+
+functions:
+  get_tenant_shop:
+    handler: tenants/tenant_shop_handler.get_shop_handler
+#    layers: ${self:custom.layers}
+    events:
+      - http:
+          path: /{tenant_id}/shops/{shop_id}
+          method: get
+          cors: true
+          authorizer: ${self:custom.authorizer}
+
+  search_shop:
+    handler: tenants/tenant_shop_handler.search_shop_handler
+ #   layers: ${self:custom.layers}
+    events:
+      - http:
+          path: /shops/_search
+          method: post
+          cors: true
+          authorizer: ${self:custom.authorizer}
+
+  get_vacant_seats:
+    handler: tenants/tenant_shop_handler.get_vacant_seats_handler
+  #  layers: ${self:custom.layers}
+    events:
+      - http:
+          path: /{tenant_id}/shops/{shop_id}/vacant_status
+          method: get
+          cors: true
+          authorizer: ${self:custom.authorizer}
+
+
+resources:
+  Resources:
+    ApiGatewayLogGroup:
+      Properties:
+        RetentionInDays: ${self:custom.retentionInDays}
